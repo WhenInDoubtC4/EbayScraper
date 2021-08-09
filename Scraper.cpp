@@ -29,11 +29,28 @@ void Scraper::scrapePage(const QString& html)
 	QGumboNode rootNode = htmlDocument.rootNode();
 
 	//Next page
-	QGumboNode nextButtonNode = rootNode.getElementsByClassName("pagn-next")[0].getElementsByTagName(HtmlTag::A)[0];
-	_nextButtonDisabled = nextButtonNode.hasAttribute("aria-disabled");
-	_nextPageUrl = nextButtonNode.getAttribute("href");
+	QGumboNodes nextButtonNodes = rootNode.getElementsByClassName("pagn-next");
+	if (nextButtonNodes.size() > 0)
+	{
+		QGumboNode nextButtonNode = nextButtonNodes[0].getElementsByTagName(HtmlTag::A)[0];
+		_nextButtonDisabled = nextButtonNode.hasAttribute("aria-disabled");
+		_nextPageUrl = nextButtonNode.getAttribute("href");
+	}
+	else
+	{
+		_nextPageUrl = QString();
+	}
 
-	QGumboNodes resultNodes = rootNode.getElementById("ListViewInner")[0].childNodes();
+	QGumboNodes listView = rootNode.getElementById("ListViewInner");
+
+	//Stalled, captcha?
+	if (listView.size() == 0)
+	{
+		emit stalled();
+		return;
+	}
+
+	QGumboNodes resultNodes = listView[0].childNodes();
 	for (QGumboNode resultRootNode : resultNodes)
 	{
 		//Check for ghost element

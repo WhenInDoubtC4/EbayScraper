@@ -5,6 +5,7 @@
 #include <QWebEngineProfile>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QEventLoop>
 
 #include <qgumbodocument.h>
 #include <qgumbonode.h>
@@ -33,7 +34,6 @@ private:
 
 	QString _searchPageHtml;
 	bool _scrapeStarted = false;
-	QString _dataFilePath;
 
 	int _resultCount = 0;
 	int _totalResultsDone = 0;
@@ -53,6 +53,7 @@ private slots:
 	void updateProgress(const int resultsDoneOnCurrentPage);
 	void onNextPageRequested(const QString& url, int prevResults);
 	void onTerminateRequested();
+	void onStalled();
 	void onScraperFinished();
 
 	void showCleanupWindow();

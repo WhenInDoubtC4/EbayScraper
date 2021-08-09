@@ -42,6 +42,7 @@ signals:
 	void log(const QString& text);
 	void updateProgress(const int resultsDone);
 	void requestNextPage(const QString& url, int prevResults);
+	void stalled();
 	void finished();
 
 private slots:

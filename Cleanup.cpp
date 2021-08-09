@@ -125,6 +125,7 @@ void Cleanup::doCleanup()
 	}
 	dataFileStream.seek(0);
 
+	int currentLine = 0;
 	while (!dataFileStream.atEnd())
 	{
 		if (_requestTerminate)
@@ -133,7 +134,6 @@ void Cleanup::doCleanup()
 			break;
 		}
 
-		static int currentLine = 0;
 		updateProgress(++currentLine);
 
 		static bool ignoreHeader = true;

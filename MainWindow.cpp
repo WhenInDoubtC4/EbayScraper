@@ -137,23 +137,24 @@ void MainWindow::testParsePage(const QString& html)
 void MainWindow::selectFilePath()
 {
 	//TODO: File path not read from line edit
-	_dataFilePath = QFileDialog::getSaveFileName(this, "Save data file", "dataOut.csv", "CSV files (*.csv);;All files (*.*)");
-	_ui->dataFilePathLineEdit->setText(_dataFilePath);
+	const QString filePath = QFileDialog::getSaveFileName(this, "Save data file", "dataOut.csv", "CSV files (*.csv);;All files (*.*)");
+	_ui->dataFilePathLineEdit->setText(filePath);
 }
 
 void MainWindow::startScrape()
 {
 	//Check file path
-	if (_dataFilePath.isEmpty())
+	if (_ui->dataFilePathLineEdit->text() == QString())
 	{
 		QMessageBox::critical(this, "Error", "No data file path selected");
 		return;
 	}
 
-	_scraper = new Scraper(this, _dataFilePath);
+	_scraper = new Scraper(this, _ui->dataFilePathLineEdit->text());
 	QObject::connect(_scraper, &Scraper::log, this, &MainWindow::logToConsole);
 	QObject::connect(_scraper, &Scraper::updateProgress, this, &MainWindow::updateProgress);
 	QObject::connect(_scraper, &Scraper::requestNextPage, this, &MainWindow::onNextPageRequested);
+	QObject::connect(_scraper, &Scraper::stalled, this, &MainWindow::onStalled);
 	QObject::connect(_scraper, &Scraper::finished, this, &MainWindow::onScraperFinished);
 
 	_webEngineView->page()->toHtml([=](const QString& html)
@@ -163,6 +164,7 @@ void MainWindow::startScrape()
 
 	_terminateRequested = false;
 	_scrapeStarted = true;
+	_totalResultsDone = 0;
 	_ui->progressBar->setEnabled(true);
 	_ui->startButton->setEnabled(false);
 	_ui->terminateButton->setEnabled(true);
@@ -215,6 +217,32 @@ void MainWindow::onTerminateRequested()
 {
 	_terminateRequested = true;
 	_ui->terminateButton->setEnabled(false);
+}
+
+void MainWindow::onStalled()
+{
+	auto messageBox = new QMessageBox(QMessageBox::Warning, "Stalled", "Scrape stalled, may be caused by captcha on site. Press OK to try again.");
+	auto terminateButton = new QPushButton("Terminate");
+	messageBox->addButton(QMessageBox::Ok);
+	messageBox->addButton(terminateButton, QMessageBox::RejectRole);
+	messageBox->show();
+	QObject::connect(messageBox, &QMessageBox::buttonClicked, [=](QAbstractButton* button)
+	{
+		if (button == messageBox->buttons()[0])
+		{
+			QObject::connect(_webEngineView->page(), &QWebEnginePage::loadFinished, [=]
+			{
+				_webEngineView->page()->toHtml([=](const QString& html)
+				{
+					_scraper->scrapePage(html);
+				});
+			});
+		}
+		else
+		{
+			onTerminateRequested();
+		}
+	});
 }
 
 void MainWindow::showCleanupWindow()
