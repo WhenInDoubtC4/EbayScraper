@@ -94,6 +94,7 @@ void Cleanup::doCleanup()
 	_ui->priceCheckBox->setEnabled(false);
 	_ui->currencyCheckBox->setEnabled(false);
 	_ui->dateCheckBox->setEnabled(false);
+	_ui->quantityCheckBox->setEnabled(false);
 	_ui->runButton->setEnabled(false);
 
 	_ui->progressBar->setEnabled(true);
@@ -169,10 +170,6 @@ void Cleanup::doCleanup()
 			price = data[2 + shift];
 		}
 
-		destFileStream << id << OUT_CSV_SEPARATOR;
-		if (shift == 1 && !_ui->unshiftCheckBox->isChecked()) destFileStream << " " << OUT_CSV_SEPARATOR;
-		destFileStream << name << OUT_CSV_SEPARATOR;
-
 		//Currency conversion
 		QString convertedPrice;
 		if (_ui->currencyCheckBox->isChecked())
@@ -206,10 +203,19 @@ void Cleanup::doCleanup()
 			convertedPrice = data[2 + shift];
 		}
 
-		destFileStream << convertedPrice << OUT_CSV_SEPARATOR
-					   << quantity << OUT_CSV_SEPARATOR
-					   << dateTime.toString(Qt::ISODate) << OUT_CSV_SEPARATOR
-					   << "\n";
+		const int quantityRepeat = _ui->quantityCheckBox->isChecked() ? quantity : 1;
+		const QString quantityString = _ui->quantityCheckBox->isChecked() ? "1" : QString::number(quantity);
+		for (int i = 0; i < quantityRepeat; i++)
+		{
+			destFileStream << id << OUT_CSV_SEPARATOR;
+			if (shift == 1 && !_ui->unshiftCheckBox->isChecked()) destFileStream << " " << OUT_CSV_SEPARATOR;
+			destFileStream << name << OUT_CSV_SEPARATOR
+						   << convertedPrice << OUT_CSV_SEPARATOR
+						   << quantityString << OUT_CSV_SEPARATOR
+						   << dateTime.toString(Qt::ISODate) << OUT_CSV_SEPARATOR
+						   << "\n";
+
+		}
 	}
 
 	dataFile.close();
@@ -237,6 +243,7 @@ void Cleanup::onCleanupFinished()
 	_ui->priceCheckBox->setEnabled(true);
 	_ui->currencyCheckBox->setEnabled(true);
 	_ui->dateCheckBox->setEnabled(true);
+	_ui->quantityCheckBox->setEnabled(true);
 	_ui->runButton->setEnabled(true);
 
 	_ui->progressBar->setEnabled(false);
